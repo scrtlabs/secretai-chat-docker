@@ -1,21 +1,24 @@
-# Use a minimal Python 3.12 image
+# Use the official Python 3.12 slim image as a base
 FROM python:3.12-slim
 
-# Set working directory inside the container
+# Set working directory inside the container to /app
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
+# Copy only the requirements file first to leverage Docker layer caching;
+# install Python dependencies from requirements.txt
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# Copy the entrypoint script and make it executable
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Copy all application code into /app
 COPY . .
 
-# Ensure history.json exists so that Streamlit can read/write it
-RUN touch /app/history.json
-
-# Expose Streamlit’s default port
+# Expose Streamlit’s default port so it can be accessed externally
 EXPOSE 8501
 
-# Run the Streamlit app on container start
-CMD ["streamlit", "run", "app_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Set entrypoint to our script. It will create history.json if missing,
+# then start the Streamlit app.
+ENTRYPOINT ["/app/entrypoint.sh"]
