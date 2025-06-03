@@ -9,4 +9,4 @@ if [ ! -f /app/history.json ]; then
 fi
 
 # Execute Streamlit, binding to all network interfaces on port 8501.
-exec streamlit run app_streamlit.py --server.port=8501 --server.address=0.0.0.0
+exec streamlit run app.py --server.port=8501 --server.address=0.0.0.0
