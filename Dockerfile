@@ -5,20 +5,17 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy only the requirements file first to leverage Docker layer caching;
-# install Python dependencies from requirements.txt
+# then install Python dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entrypoint script and make it executable
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Copy all application code into /app
+# Copy the rest of the application code (including app_streamlit.py)
+# into /app
 COPY . .
 
 # Expose Streamlit’s default port so it can be accessed externally
 EXPOSE 8501
 
-# Set entrypoint to our script. It will create history.json if missing,
-# then start the Streamlit app.
-ENTRYPOINT ["/app/entrypoint.sh"]
+# When the container starts, run Streamlit directly.
+# It will look for app_streamlit.py in /app.
+CMD ["streamlit", "run", "app_streamlit.py", "--server.port=8501", "--server.address=0.0.0.0"]
