@@ -31,7 +31,7 @@ BASE_URL = urls[0]
 llm = ChatSecret(base_url=BASE_URL, model=MODEL, temperature=1.0)
 
 # History file and session state
-HISTORY_FILE = os.path.join(os.getcwd(), 'history.json')
+HISTORY_FILE = os.path.join(os.getcwd(), 'data', 'history.json')
 if 'history' not in st.session_state:
     if not os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'w') as f:

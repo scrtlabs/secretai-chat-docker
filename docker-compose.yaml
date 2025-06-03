@@ -1,24 +1,21 @@
-# Use the latest Compose schema (version key is optional in Docker Compose v2+).
 services:
   secretai-streamlit:
-    # Pull the prebuilt image from GitHub Container Registry (GHCR).
+    # Pull the prebuilt image from GHCR (contains entrypoint.sh, app_streamlit.py, etc.)
     image: ghcr.io/scrtlabs/secretai-chat:latest
     container_name: secretai_streamlit
 
-    # Pass the API_KEY environment variable from the host into the container.
-    # Compose will read whatever value is already set in the host environment.
+    # Pass API_KEY from the host environment into the container
     environment:
       - API_KEY
 
-    # Bind-mount the entire project directory into /app inside the container.
-    # This allows entrypoint.sh to create history.json in /app and automatically
-    # sync it to the host filesystem.
+    # Bind-mount only ./app_data/data (host) → /app/data (container)
+    # This preserves everything under /app/ (the image’s baked-in code), while
+    # allowing entrypoint.sh to create /app/data/history.json and persist it.
     volumes:
-      - ./:/app
+      - ./app_data/data:/app/data
 
-    # Map port 8501 inside the container to port 8501 on the host.
+    # Expose Streamlit port
     ports:
       - "8501:8501"
 
-    # Restart the container automatically unless it was manually stopped.
     restart: unless-stopped

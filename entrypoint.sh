@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-# If history.json does not exist in /app, create it with an empty JSON array.
-# Because /app is bind-mounted to the host project directory, this will also
-# create history.json on the host automatically.
-if [ ! -f /app/history.json ]; then
-  echo "[]" > /app/history.json
+# Ensure /app/data directory exists (mounted from host)
+if [ ! -d /app/data ]; then
+  mkdir -p /app/data
 fi
 
-# Execute Streamlit, binding to all network interfaces on port 8501.
-exec streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+# If history.json doesn’t exist, create it as an empty JSON array
+if [ ! -f /app/data/history.json ]; then
+  echo "[]" > /app/data/history.json
+fi
+
+# Run Streamlit
+exec streamlit run app_streamlit.py --server.port=8501 --server.address=0.0.0.0
