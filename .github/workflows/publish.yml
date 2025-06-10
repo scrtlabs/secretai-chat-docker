@@ -36,8 +36,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/secretai-chat:latest .
+          docker build -t ghcr.io/${{ github.repository_owner }}/secretai-chat:v2 .
 
       - name: Push to GHCR
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/secretai-chat:latest
+          docker push ghcr.io/${{ github.repository_owner }}/secretai-chat:v2
