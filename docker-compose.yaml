@@ -1,7 +1,7 @@
 services:
   secretai-streamlit:
-    image: ghcr.io/scrtlabs/secretai-chat:latest
-    container_name: secretai_streamlit
+    image: ghcr.io/scrtlabs/secretai-chat:v2
+    container_name: secretai_sample
     env_file:
       - .env
     volumes:
