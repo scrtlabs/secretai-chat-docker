@@ -4,71 +4,396 @@
   <meta charset="UTF-8" />
   <title>SecretAI Chat – Sample</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 0;
       font-family: 'Inter', sans-serif;
       display: flex; flex-direction: column; height: 100vh;
-      background: #f0f2f5;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
     }
+
+    /* Header */
+    #header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    #header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .status-indicator {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .status-indicator::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .status-ok { background: rgba(46, 213, 115, 0.15); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.3); }
+    .status-ok::before { background: #2ed573; }
+    .status-error { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+    .status-error::before { background: #ff4757; }
+    .status-connecting { background: rgba(255, 165, 2, 0.15); color: #ffa502; border: 1px solid rgba(255, 165, 2, 0.3); }
+    .status-connecting::before { background: #ffa502; }
+
+    /* Error container */
+    #error-container {
+      background: linear-gradient(135deg, #ff4757, #ff3742);
+      color: white;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+      position: relative;
+      box-shadow: 0 2px 10px rgba(255, 71, 87, 0.3);
+    }
+
+    #error-container .close-btn {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    #error-container .close-btn:hover {
+      opacity: 1;
+    }
+
+    /* Chat container */
     #chat-container {
-      flex: 1; overflow-y: auto;
-      padding: 1rem;
-      display: flex; flex-direction: column; gap: 0.5rem;
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
     }
-    .message { display: flex; max-width: 80%; }
-    .message.user    { align-self: flex-end; }
+
+    #chat-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #chat-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    #chat-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    .message {
+      display: flex;
+      max-width: 85%;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user { align-self: flex-end; }
     .message.assistant { align-self: flex-start; }
+    .message.error { align-self: center; max-width: 90%; }
+
     .bubble {
-      border-radius: 12px; padding: 0.75rem 1rem;
+      border-radius: 18px;
+      padding: 1rem 1.25rem;
       word-wrap: break-word;
-      /* PRESERVE ALL SPACES AND LINE BREAKS */
       white-space: pre-wrap;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s ease;
     }
+
+    .bubble:hover {
+      transform: translateY(-1px);
+    }
+
     .user .bubble {
-      background: #0069d9; color: white;
-      border-bottom-right-radius: 2px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 6px;
+      margin-left: 2rem;
     }
+
     .assistant .bubble {
-      background: white; color: #333;
-      border-bottom-left-radius: 2px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      border-bottom-left-radius: 6px;
+      margin-right: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .think i {
-      font-style: italic; color: #555; opacity: 0.8;
+
+    .error .bubble {
+      background: linear-gradient(135deg, #ff4757, #ff3742);
+      color: white;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 500;
     }
+
+    .think {
+      opacity: 0.7;
+      font-style: italic;
+      color: #666;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .assistant .think {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Input container */
     #input-container {
-      display: flex; padding: 0.5rem;
-      background: white; border-top: 1px solid #ddd;
+      display: flex;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      gap: 1rem;
     }
+
     #user-input {
-      flex: 1; padding: 0.75rem; border: 1px solid #ccc;
-      border-radius: 8px; font-size: 1rem;
+      flex: 1;
+      padding: 1rem 1.25rem;
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 25px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+      outline: none;
     }
+
+    #user-input:focus {
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+    }
+
+    #user-input::placeholder {
+      color: #999;
+    }
+
     #send-btn {
-      margin-left: 0.5rem; padding: 0 1rem;
-      font-size: 1rem; border: none; background: #0069d9;
-      color: white; border-radius: 8px; cursor: pointer;
-      transition: background 0.2s;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      font-family: inherit;
     }
-    #send-btn:disabled { background: #999; cursor: not-allowed; }
+
+    #send-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    #send-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-style: italic;
+      font-size: 1.1rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .empty-state h2 {
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      #header {
+        padding: 0.75rem 1rem;
+      }
+
+      #header h1 {
+        font-size: 1.25rem;
+      }
+
+      #chat-container {
+        padding: 1rem;
+        gap: 0.75rem;
+      }
+
+      .message {
+        max-width: 95%;
+      }
+
+      .bubble {
+        padding: 0.75rem 1rem;
+        border-radius: 15px;
+      }
+
+      .user .bubble {
+        margin-left: 1rem;
+      }
+
+      .assistant .bubble {
+        margin-right: 1rem;
+      }
+
+      #input-container {
+        padding: 1rem;
+        gap: 0.75rem;
+      }
+
+      #user-input {
+        padding: 0.875rem 1rem;
+        border-radius: 20px;
+      }
+
+      #send-btn {
+        padding: 0.875rem 1.5rem;
+        border-radius: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="chat-container"></div>
+  <div id="header">
+    <h1>SecretAI Chat – Sample</h1>
+    <div id="status-indicator" class="status-indicator status-connecting">Connecting</div>
+  </div>
+
+  <div id="error-container">
+    <span id="error-message"></span>
+    <button class="close-btn" onclick="hideError()">×</button>
+  </div>
+
+  <div id="chat-container">
+    <div class="loading">Loading chat history...</div>
+  </div>
+
   <div id="input-container">
-    <input id="user-input" placeholder="Enter your message…" />
+    <input id="user-input" placeholder="Type your message here..." disabled />
     <button id="send-btn" disabled>Send</button>
   </div>
 
   <script>
     const chat = document.getElementById("chat-container");
-    const inp  = document.getElementById("user-input");
-    const btn  = document.getElementById("send-btn");
+    const inp = document.getElementById("user-input");
+    const btn = document.getElementById("send-btn");
+    const errorContainer = document.getElementById("error-container");
+    const errorMessage = document.getElementById("error-message");
+    const statusIndicator = document.getElementById("status-indicator");
+
+    const shownErrors = new Set(); // Track shown errors
+
+    function showError(message, persistent = false) {
+      // Don't show the same error multiple times
+      if (shownErrors.has(message)) return;
+      shownErrors.add(message);
+
+      if (persistent) {
+        errorMessage.textContent = message;
+        errorContainer.style.display = "block";
+        updateStatus("error", "Error");
+        inp.disabled = true;
+        btn.disabled = true;
+      } else {
+        appendMessage("error", message);
+        // Re-enable input after showing error in chat
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            btn.disabled = false;
+            inp.disabled = false;
+          }
+        }, 100);
+      }
+    }
+
+    function hideError() {
+      errorContainer.style.display = "none";
+      // Clear the shown errors set when manually closing
+      shownErrors.clear();
+    }
+
+    function updateStatus(status, text) {
+      statusIndicator.textContent = text;
+      statusIndicator.className = `status-indicator status-${status}`;
+    }
 
     function appendMessage(role, html) {
+      // Remove loading message if it exists
+      const loadingMsg = chat.querySelector('.loading');
+      if (loadingMsg) {
+        loadingMsg.remove();
+      }
+
       const w = document.createElement("div");
       w.classList.add("message", role);
       const b = document.createElement("div");
@@ -80,39 +405,114 @@
       return b;
     }
 
-    async function loadHistory() {
-      const resp = await fetch("/history.json");
-      if (!resp.ok) return;
-      const hist = await resp.json();
-      for (const [role, text] of hist) {
-        if (role === "assistant") {
-          const m = text.match(/<think>([\s\S]*?)<\/think>/);
-          if (m) {
-            const after = text.replace(/<think>[\s\S]*?<\/think>/, "");
-            appendMessage("assistant",
-              `<span class="think"><i>${m[1]}</i>&nbsp;</span>` +
-              `<span class="normal">${after}</span>`
-            );
-          } else {
-            appendMessage("assistant", text);
-          }
+    async function checkApiStatus() {
+      try {
+        const resp = await fetch("/api/status");
+        const status = await resp.json();
+
+        if (status.status === "error") {
+          showError(status.message, true);
+          return false;
         } else {
-          appendMessage("user", text);
+          updateStatus("ok", "Connected");
+          return true;
         }
+      } catch (e) {
+        showError(`Connection Error: ${e.message}`, true);
+        return false;
       }
-      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function loadHistory() {
+      try {
+        const resp = await fetch("/history.json");
+        if (!resp.ok) {
+          console.warn("Could not load history");
+          showEmptyState();
+          return;
+        }
+        const hist = await resp.json();
+
+        // Clear loading message
+        chat.innerHTML = "";
+
+        if (hist.length === 0) {
+          showEmptyState();
+          return;
+        }
+
+        for (const [role, text] of hist) {
+          if (role === "assistant") {
+            const m = text.match(/<think>([\s\S]*?)<\/think>/);
+            if (m) {
+              const after = text.replace(/<think>[\s\S]*?<\/think>/, "");
+              appendMessage("assistant",
+                `<div class="think">${m[1]}</div>` +
+                `<div class="normal">${after}</div>`
+              );
+            } else {
+              appendMessage("assistant", text);
+            }
+          } else {
+            appendMessage("user", text);
+          }
+        }
+        chat.scrollTop = chat.scrollHeight;
+      } catch (e) {
+        chat.innerHTML = "";
+        showError(`Failed to load chat history: ${e.message}`);
+      }
+    }
+
+    function showEmptyState() {
+      chat.innerHTML = `
+        <div class="empty-state">
+          <h2>Welcome to SecretAI Chat</h2>
+          <p>Start a conversation by typing a message below</p>
+        </div>
+      `;
     }
 
     let ws, thinkSpan, normalSpan;
-    let first=true, hasThink=false, done=false, buf="";
+    let first = true, hasThink = false, done = false, buf = "";
 
     function connect() {
-      const proto = location.protocol==="https:"?"wss":"ws";
+      updateStatus("connecting", "Connecting");
+      const proto = location.protocol === "https:" ? "wss" : "ws";
       ws = new WebSocket(`${proto}://${location.host}/ws`);
-      ws.onopen    = () => btn.disabled=false;
-      ws.onclose   = () => { btn.disabled=true; setTimeout(connect,1000) };
-      ws.onerror   = e => { console.error(e); ws.close() };
-      ws.onmessage = e => handleChunk(JSON.parse(e.data).chunk);
+
+      ws.onopen = () => {
+        updateStatus("ok", "Connected");
+        btn.disabled = false;
+        inp.disabled = false;
+      };
+
+      ws.onclose = () => {
+        updateStatus("error", "Disconnected");
+        btn.disabled = true;
+        inp.disabled = true;
+        setTimeout(() => {
+          if (errorContainer.style.display === "none" || !errorContainer.style.display) {
+            connect();
+          }
+        }, 3000);
+      };
+
+      ws.onerror = e => {
+        console.error("WebSocket error:", e);
+        updateStatus("error", "Connection Error");
+      };
+
+      ws.onmessage = e => {
+        const data = JSON.parse(e.data);
+
+        if (data.role === "error") {
+          showError(data.message);
+          return;
+        }
+
+        handleChunk(data.chunk);
+      };
     }
 
     function handleChunk(token) {
@@ -124,15 +524,16 @@
       buf += token;
       if (!done && hasThink) {
         const idx = buf.indexOf("</think>");
-        if (idx!==-1) {
-          const before = buf.slice(0,idx).replace(/<think>/g,"");
-          const after  = buf.slice(idx+8);
-          thinkSpan.innerHTML = `<i>${before}</i>&nbsp;`;
+        if (idx !== -1) {
+          const before = buf.slice(0, idx).replace(/<think>/g, "");
+          const after = buf.slice(idx + 8);
+          thinkSpan.innerHTML = before;
           normalSpan.textContent = after;
-          done = true; buf = after;
+          done = true;
+          buf = after;
         } else {
-          const inside = buf.replace(/<think>/g,"");
-          thinkSpan.innerHTML = `<i>${inside}</i>&nbsp;`;
+          const inside = buf.replace(/<think>/g, "");
+          thinkSpan.innerHTML = inside;
         }
       } else {
         normalSpan.textContent += token;
@@ -142,23 +543,48 @@
 
     function send() {
       const txt = inp.value.trim();
-      if (!txt||ws.readyState!==WebSocket.OPEN) return;
+      if (!txt || ws.readyState !== WebSocket.OPEN) return;
+
       appendMessage("user", txt);
-      inp.value=""; btn.disabled=true;
-      first=true; hasThink=false; done=false; buf="";
+      inp.value = "";
+      btn.disabled = true;
+
+      first = true;
+      hasThink = false;
+      done = false;
+      buf = "";
+
       const bubble = appendMessage("assistant",
-        `<span class="think"></span><span class="normal"></span>`
+        `<div class="think"></div><div class="normal"></div>`
       );
-      thinkSpan  = bubble.querySelector(".think");
+      thinkSpan = bubble.querySelector(".think");
       normalSpan = bubble.querySelector(".normal");
-      ws.send(txt);
+
+      try {
+        ws.send(txt);
+      } catch (e) {
+        showError(`Failed to send message: ${e.message}`);
+      }
     }
 
     btn.addEventListener("click", send);
-    inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){e.preventDefault();send()} });
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
 
-    loadHistory();
-    connect();
+    // Initialize the application
+    async function init() {
+      const apiOk = await checkApiStatus();
+      if (apiOk) {
+        await loadHistory();
+        connect();
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>

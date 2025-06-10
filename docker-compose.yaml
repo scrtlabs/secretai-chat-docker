@@ -1,5 +1,5 @@
 services:
-  secretai-streamlit:
+  secretai-sample:
     image: ghcr.io/scrtlabs/secretai-chat:v2
     container_name: secretai_sample
     env_file:
