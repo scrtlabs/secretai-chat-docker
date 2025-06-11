@@ -14,9 +14,5 @@ COPY . .
 # Expose both ports: 8000 for FastAPI and 8501 only if you still have Streamlit
 EXPOSE 8000
 
-# Run Uvicorn with the standard asyncio event loop, not uvloop
-CMD ["uvicorn", "main:app",
-     "--host", "0.0.0.0",
-     "--port", "8000",
-     "--reload",
-     "--loop", "asyncio"]
+# Default command: launch Uvicorn with auto-reload
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000","--loop", "asyncio", "--reload"]
