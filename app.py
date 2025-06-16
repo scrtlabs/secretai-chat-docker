@@ -1,6 +1,8 @@
 import os
 import json
 import asyncio
+from asyncio import Lock
+
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
@@ -11,6 +13,7 @@ from secret_ai_sdk.secret_ai import ChatSecret
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+history_lock = Lock()
 # history under data/history.json
 os.makedirs("data", exist_ok=True)
 HISTORY_PATH = os.path.join("data", "history.json")
@@ -81,8 +84,9 @@ async def websocket_chat(websocket: WebSocket):
 
     # load history from data/history.json
     try:
-        with open(HISTORY_PATH, "r", encoding="utf-8") as f:
-            history = json.load(f)
+        async with history_lock:
+            with open(HISTORY_PATH, "r", encoding="utf-8") as f:
+                history = json.load(f)
     except Exception as e:
         await websocket.send_json({
             "role": "error",
@@ -140,13 +144,18 @@ async def websocket_chat(websocket: WebSocket):
                 if full_response:
                     history[-1][1] = full_response
                     try:
-                        with open(HISTORY_PATH, "w", encoding="utf-8") as f:
-                            json.dump(history, f, ensure_ascii=False, indent=2)
+                        async with history_lock:
+                            with open(HISTORY_PATH, "w", encoding="utf-8") as f:
+                                json.dump(history, f, ensure_ascii=False, indent=2)
                     except Exception as e:
                         await websocket.send_json({
                             "role": "error",
                             "message": f"Failed to save chat history: {str(e)}"
                         })
+                await websocket.send_json({
+                   "role": "assistant",
+                   "done": True
+                })
 
             except Exception as e:
                 await websocket.send_json({

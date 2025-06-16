@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" href="/static/favicon.png" type="image/x-icon" />
   <title>SecretAI Chat – Sample</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -425,7 +426,7 @@
 
     async function loadHistory() {
       try {
-        const resp = await fetch("/history.json");
+        const resp = await fetch("/history.json?_=" + Date.now());
         if (!resp.ok) {
           console.warn("Could not load history");
           showEmptyState();
@@ -511,6 +512,12 @@
           return;
         }
 
+        if (data.done) {
+          btn.disabled = false;
+          inp.disabled = false;
+          return;
+        }
+
         handleChunk(data.chunk);
       };
     }
@@ -548,6 +555,7 @@
       appendMessage("user", txt);
       inp.value = "";
       btn.disabled = true;
+      inp.disabled = true;
 
       first = true;
       hasThink = false;
