@@ -1,18 +1,29 @@
 # Use official Python 3.12 slim image
 FROM python:3.12-slim
 
+# Ensure system packages are up to date and install git for VCS deps
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Optional: faster, cleaner pip installs
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 # Set working dir
 WORKDIR /app
 
-# Copy and install dependencies
+# Copy and install dependencies first (better caching)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip \
+ && pip install -r requirements.txt
 
-# Copy all source (main.py, static/, data/ etc.)
+# Copy app sources
 COPY . .
 
-# Expose both ports: 8000 for FastAPI and 8501 only if you still have Streamlit
+# Expose API port
 EXPOSE 8000
 
-# Default command: launch Uvicorn with auto-reload
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000","--loop", "asyncio", "--reload"]
+# Run app
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio", "--reload"]
